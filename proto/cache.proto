@@ -1,0 +1,36 @@
+// Specifies that we are using the modern "proto3" syntax.
+syntax = "proto3";
+
+// Defines a package name to prevent naming conflicts.
+package cache;
+
+// The 'Set' request message. It contains the key and value to be stored.
+message SetRequest {
+  string key = 1;
+  bytes value = 2; // 'bytes' is used for arbitrary binary data.
+}
+
+// The 'Set' response message.
+message SetResponse {
+  bool success = 1;
+}
+
+// The 'Get' request message. It contains the key to retrieve.
+message GetRequest {
+  string key = 1;
+}
+
+// The 'Get' response message.
+message GetResponse {
+  bytes value = 1;
+  bool found = 2; // Indicates if the key was found in the cache.
+}
+
+// This defines the service itself, which is a collection of RPC methods.
+service CacheService {
+  // The 'Set' method.
+  rpc Set(SetRequest) returns (SetResponse) {}
+
+  // The 'Get' method.
+  rpc Get(GetRequest) returns (GetResponse) {}
+}

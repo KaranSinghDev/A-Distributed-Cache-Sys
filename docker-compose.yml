@@ -1,0 +1,34 @@
+# The 'version' attribute is obsolete with modern Docker Compose, we can remove it.
+services:
+  base-node: &base-node
+    build: .
+    networks:
+      - cache-net
+
+  node1:
+    <<: *base-node
+    container_name: node1
+    # --- FIX: Use the service name, not localhost ---
+    command: python server.py node1:50051
+    ports:
+      - "50051:50051"
+
+  node2:
+    <<: *base-node
+    container_name: node2
+    # --- FIX: Use the service name, not localhost ---
+    command: python server.py node2:50052
+    ports:
+      - "50052:50052"
+
+  node3:
+    <<: *base-node
+    container_name: node3
+    # --- FIX: Use the service name, not localhost 
+    command: python server.py node3:50053
+    ports:
+      - "50053:50053"
+
+networks:
+  cache-net:
+    driver: bridge
