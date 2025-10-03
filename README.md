@@ -28,7 +28,6 @@ Benchmarks were run against a 3-node cluster, simulating a high-concurrency work
 
 Each node in the cluster is identical. When a client sends a request to any node, that node acts as a coordinator. It uses a consistent hash ring to identify the N nodes responsible for the key and then manages the replication or retrieval of the data.
 
-```mermaid
 graph TD;
     Client -- "Set(K1, V1)" --> Node1[Node 1 (Coordinator)];
     
@@ -40,7 +39,6 @@ graph TD;
         Node2 --> D2{Data};
         Node3 --> D3{Data};
     end
-```
 
 ## How to Run the Cluster & Tests
 
