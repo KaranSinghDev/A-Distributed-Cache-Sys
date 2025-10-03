@@ -1,6 +1,9 @@
 # Python Distributed Key-Value Store
 
-This project is a fault-tolerant, distributed key-value store built from scratch in Python. It is a deep dive into the principles of distributed systems, focusing on high availability, data partitioning, and modern, high-concurrency backend design.
+Based on the reasearch of foundational distributed systems like Amazon's DynamoDB and Redis Cluster, I wanted to move beyond theory and implement the core principles of resilience and scale myself. This project is the result: a fault-tolerant key-value store built from scratch to explore how systems can guarantee data safety in the face of network and server failures.
+To achieve this, I implemented the two core concepts I had studied: consistent hashing for data partitioning and N-way replication for data safety. The system's resilience was then validated by an automated chaos test that proves it can withstand sudden node outages without data loss.
+
+s project is a fault-tolerant, distributed key-value store built from scratch in Python. It is a deep dive into the principles of distributed systems, focusing on high availability, data partitioning, and modern, high-concurrency backend design.
 
 The system operates as a cluster of nodes that replicate data to survive failures, partition data using consistent hashing, and communicate using high-performance gRPC.
 
