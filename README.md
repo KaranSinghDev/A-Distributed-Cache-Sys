@@ -29,17 +29,22 @@ Benchmarks were run against a 3-node cluster, simulating a high-concurrency work
 Each node in the cluster is identical. When a client sends a request to any node, that node acts as a coordinator. It uses a consistent hash ring to identify the N nodes responsible for the key and then manages the replication or retrieval of the data.
 
 ``` mermaid
-graph TD;
-    Client -- "Set(K1, V1)" --> Node1[Node 1 (Coordinator)];
+
+graph TD
+    Client([Client])
     
-    subgraph "3-Node Cluster (Replication Factor = 3)"
-        Node1 -- "1. Writes K1 locally" --> D1{Data};
-        Node1 -- "2. Replicates K1 (async)" --> Node2[Node 2];
-        Node1 -- "3. Replicates K1 (async)" --> Node3[Node 3];
-        
-        Node2 --> D2{Data};
-        Node3 --> D3{Data};
+    subgraph "Distributed Cache Cluster (N=3)"
+        Node1("Node 1 (Coordinator)")
+        Node2("Node 2 (Replica)")
+        Node3("Node 3 (Replica)")
     end
+
+    Client -- "SET('my_key', 'value')" --> Node1;
+    Node1 -- "1. Writes data locally" --> Storage1(( ))
+    Node1 -- "2. Replicates write" --> Node2;
+    Node1 -- "2. Replicates write" --> Node3;
+    Node2 -- "Stores data" --> Storage2(( ))
+    Node3 -- "Stores data" --> Storage3(( )) 
 ```
 
 ## How to Run the Cluster & Tests
