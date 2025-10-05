@@ -27,6 +27,10 @@ Benchmarks were run against a 3-node cluster, simulating a high-concurrency work
 | SET Throughput    | ~3,500 ops/sec    | Reflects the necessary trade-off for fault tolerance, as each SET is coordinated and replicated across the cluster.|
 | Data Safety       | Zero Data Loss    | Validated via an automated chaos test where nodes were randomly terminated during operation.                      |
 
+1.The system was validated with an automated chaos test that randomly kills live nodes during operation. The definitive result of this test was zero data loss, indicating the replication architecture is not just theoretically sound, but practically effective.
+
+2.Unlike systems that chase only speed, the results indicate that a robust, distributed architecture can be achieved without sacrificing performance. It maintains a p99 read latency of under 6ms even while handling a concurrent load of 50 clients and managing a replicated state.
+
 ## System Architecture
 
 Each node in the cluster is identical. When a client sends a request to any node, that node acts as a coordinator. It uses a consistent hash ring to identify the N nodes responsible for the key and then manages the replication or retrieval of the data.
