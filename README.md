@@ -1,72 +1,100 @@
 # Python Distributed Key-Value Store
 
-Based on the reasearch of foundational distributed systems like Amazon's DynamoDB and Redis Cluster, I wanted to move beyond theory and implement the core principles of resilience and scale myself. This project is the result: a fault-tolerant key-value store built from scratch to explore how systems can guarantee data safety in the face of network and server failures.
-To make this, I implemented the two fundamental methods: consistent hashing for data partitioning and N-way replication for data safety. The system's resilience is validated by an automated chaos test that proves it can withstand sudden node outages without data loss.
+After researching foundational distributed systems like Amazon's DynamoDB and Redis Cluster, I wanted to move beyond theory and implement the core principles of resilience and scale myself. This project is the result: a **fault-tolerant key-value store built from scratch** to explore how systems can guarantee data safety in the face of network and server failures.
 
-This project is a fault-tolerant, distributed key-value store built from scratch in Python. It is a deep dive into the principles of distributed systems, focusing on high availability, data partitioning, and modern, high-concurrency backend design.
+The system operates as a cluster of nodes that partition data using consistent hashing, replicate every write for high availability, and communicate using high-performance gRPC. Its resilience is validated by an automated chaos test that proves it can withstand sudden node outages with zero data loss.
 
-The system operates as a cluster of nodes that replicate data to survive failures, partition data using consistent hashing, and communicate using high-performance gRPC.
+## Key Features
 
-## Key Features & Architectural Highlights
+- **Distributed & Fault-Tolerant**: Uses N-way replication to ensure data safety and high availability
+- **Asynchronous Architecture**: Built on Python's asyncio to handle thousands of concurrent client connections with high throughput
+- **Algorithmic Partitioning**: Implements a consistent hashing ring from scratch to intelligently distribute data across the cluster
+- **High-Performance Networking**: Uses gRPC and Protocol Buffers for a strongly-typed API contract and low-latency internal communication
+- **Proven Resilience**: Includes an automated "chaos test" that terminates live nodes to definitively prove the system's fault tolerance
+- **Fully Containerized**: The entire multi-node cluster is defined and orchestrated with Docker and Docker Compose for one-command deployment
 
-- **Distributed & Fault-Tolerant:** The system is designed to run as a multi-node cluster, with N-way replication ensuring data safety and high availability.
-- **Asynchronous from the Ground Up:** Built entirely on Python's asyncio framework to handle thousands of concurrent client connections with high throughput.
-- **Consistent Hashing:** Implemented for intelligent data partitioning, allowing the cluster to scale horizontally while minimizing data re-shuffling.
-- **High-Performance Networking:** Uses gRPC and Protocol Buffers for a strongly-typed API contract and low-latency internal communication.
-- **Proven Resilience:** Includes an automated "chaos test" to validate the system's fault tolerance by actively terminating nodes and verifying data integrity.
-- **Fully Containerized:** The entire multi-node cluster is defined and orchestrated with Docker and Docker Compose for one-command deployment.
+## System Architecture: The Distributed Algorithm
 
-## Performance Benchmarks
+The system's resilience is based on two core distributed algorithms: **Consistent Hashing** for data partitioning and **N-way Replication** for fault tolerance.
+
+### How It Works
+
+- **Consistent Hashing**: Physical server nodes are mapped to many points ("virtual nodes") on a logical ring. A key is hashed to a point on the same ring. The physical node clockwise from that point is the "coordinator" for that key.
+- **Routing**: A request sent to any node will be forwarded to the correct coordinator based on the hash ring logic.
+- **Replication**: The coordinator replicates the write to the next N-1 successor nodes on the ring to ensure data safety.
+
+### Architecture Diagram
+
+```
+graph TD
+    subgraph "Client Request for 'my_key'"
+        Client([Client])
+    end
+
+    subgraph "Consistent Hash Ring"
+        direction LR
+        Node1("Node 1")
+        Node2("Node 2")
+        Node3("Node 3")
+        KeyHash{"Hash('my_key')"}
+
+        Node1 --> Node2 --> Node3 --> Node1
+    end
+
+    Client -- "1. Sends SET('my_key') to any node" --> Node2;
+    Node2 -- "2. Hashes 'my_key' to find coordinator (Node 3)" --> KeyHash;
+    KeyHash -- "3. Forwards request to coordinator" --> Node3;
+    Node3 -- "4. Replicates to successors (N=3)" --> Node1;
+    Node3 -- "4. Replicates to successors (N=3)" --> Node2;
+```
+
+## Benchmark & Resilience Analysis
+
+### Benchmark Environment
+
+All benchmarks were executed on the following developer-grade machine to ensure reproducibility:
+
+- **CPU**: 12th Gen Intel(R) Core(TM) i7-12700H
+- **RAM**: 16 GB
+- **Storage**: NVMe SSD
+- **OS**: Windows 11 Home (WSL2 Ubuntu 22.04)
+- **Network**: Docker Compose bridge network
+
+### Performance Results
 
 Benchmarks were run against a 3-node cluster, simulating a high-concurrency workload of 50 simultaneous clients.
 
-| Metric            | Result            | Analysis                                                                                                           |
-|-------------------|-------------------|--------------------------------------------------------------------------------------------------------------------|
-| GET Throughput    | ~17,000 ops/sec   | Demonstrates the efficiency of the asyncio architecture for I/O-bound workloads.                                  |
-| GET Latency (p99) | < 6 ms            | Shows that 99% of read requests completed in under 6 milliseconds, even under heavy concurrent load.             |
-| SET Throughput    | ~3,500 ops/sec    | Reflects the necessary trade-off for fault tolerance, as each SET is coordinated and replicated across the cluster.|
-| Data Safety       | Zero Data Loss    | Validated via an automated chaos test where nodes were randomly terminated during operation.                      |
+| Metric | Result | Analysis |
+|--------|--------|----------|
+| GET Throughput | ~17,000 ops/sec | Demonstrates the efficiency of the asyncio architecture for I/O-bound workloads |
+| GET Latency (p99) | < 6 ms | Shows 99% of read requests completed in under 6ms, even under heavy concurrent load |
+| SET Throughput | ~3,500 ops/sec | Reflects the necessary trade-off for fault tolerance, as each SET is coordinated and replicated |
 
-1.The system was validated with an automated chaos test that randomly kills live nodes during operation. The definitive result of this test was zero data loss, indicating the replication architecture is not just theoretically sound, but practically effective.
+## Proof of Fault Tolerance: The Chaos Test
 
-2.Unlike systems that chase only speed, the results indicate that a robust, distributed architecture can be achieved without sacrificing performance. It maintains a p99 read latency of under 6ms even while handling a concurrent load of 50 clients and managing a replicated state.
+A claim of "high availability" is meaningless without proof. The system's fault tolerance was validated via an automated chaos test that simulates a catastrophic node failure.
 
-## System Architecture
+### Test Phases
 
-Each node in the cluster is identical. When a client sends a request to any node, that node acts as a coordinator. It uses a consistent hash ring to identify the N nodes responsible for the key and then manages the replication or retrieval of the data.
+**(A) Stable Performance**: The cluster operates with low latency.
 
-``` mermaid
+**(B) Catastrophic Failure**: The moment a node is killed, latency briefly spikes as in-flight requests are retried against surviving nodes.
 
-graph TD
-    Client([Client])
-    
-    subgraph "Distributed Cache Cluster (N=3)"
-        Node1("Node 1 (Coordinator)")
-        Node2("Node 2 (Replica)")
-        Node3("Node 3 (Replica)")
-    end
+**(C) Stable Recovery**: The cluster immediately recovers, routing all new requests to the two surviving nodes, and settles into a new, stable latency profile, proving zero data loss and high availability.
 
-    Client -- "SET('my_key', 'value')" --> Node1;
-    Node1 -- "1. Writes data locally" --> Storage1(( ))
-    Node1 -- "2. Replicates write" --> Node2;
-    Node1 -- "2. Replicates write" --> Node3;
-    Node2 -- "Stores data" --> Storage2(( ))
-    Node3 -- "Stores data" --> Storage3(( )) 
-```
+**Note**: To view the actual graph, run the `chaos_test.py` script, which generates latency data over time. A visualization can be embedded here using: `![Chaos Test Graph](chaos_graph.png)`
 
-## How to Run the Cluster & Tests
-
-This project is orchestrated with Docker Compose.
+## Getting Started
 
 ### Prerequisites
 
 - Docker & Docker Compose
 - Git
-- Python 3.10+ (for running the test scripts)
+- Python 3.10+ (for running test scripts)
 
 ### 1. Launch the 3-Node Cluster
 
-Clone the repository and use Docker Compose to build and start the services.
+Clone the repository and use Docker Compose to build and start the services:
 
 ```bash
 git clone https://github.com/YourUsername/python-distributed-cache.git
@@ -74,11 +102,11 @@ cd python-distributed-cache
 docker-compose up --build
 ```
 
-The cluster is now running. You will see logs from node1, node2, and node3 in your terminal.
+The cluster is now running.
 
 ### 2. Run the Fault Tolerance (Chaos) Test
 
-While the cluster is running, open a second terminal to run the chaos test. This script will set a key, randomly kill one of the nodes, and verify that the key can still be retrieved from a surviving node.
+While the cluster is running, open a second terminal to run the chaos test:
 
 ```bash
 # In a new terminal, from the project root
@@ -89,7 +117,7 @@ pip install -r requirements.txt
 python chaos_test.py
 ```
 
-Upon successful completion, you will see a `✅ CHAOS TEST PASSED ✅` message.
+Upon successful completion, you will see a `✅ CHAOS TEST PASSED ✅` message and the data for the graph will be generated.
 
 ### 3. Run the Performance Benchmark
 
@@ -99,3 +127,7 @@ To run the performance benchmark against the live cluster:
 # In a new terminal, with the venv activated
 python benchmark.py
 ```
+
+## License
+
+This project is provided as-is for educational and demonstration purposes.
