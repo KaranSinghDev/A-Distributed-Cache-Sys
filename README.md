@@ -30,7 +30,7 @@ graph TD
     subgraph "Client Request for 'my_key'"
         Client([Client])
     end
-    
+
     subgraph "Consistent Hash Ring"
         direction LR
         Node1("Node 1")
