@@ -72,7 +72,7 @@ Benchmarks were run against a 3-node cluster, simulating a high-concurrency work
 
 ## Proof of Fault Tolerance: The Chaos Test
 
-A claim of "high availability" is meaningless without proof. The system's fault tolerance was validated via an automated chaos test that simulates a catastrophic node failure.
+The system's fault tolerance was validated via an automated chaos test that simulates a catastrophic node failure.
 
 ### Test Phases
 
@@ -82,7 +82,7 @@ A claim of "high availability" is meaningless without proof. The system's fault 
 
 **(C) Stable Recovery**: The cluster immediately recovers, routing all new requests to the two surviving nodes, and settles into a new, stable latency profile, proving zero data loss and high availability.
 
-**Note**: To view the actual graph, run the `chaos_test.py` script, which generates latency data over time. A visualization can be embedded here using: `![Chaos Test Graph](chaos_graph.png)`
+**Note**: To view the actual graph, run the `chaos_test.py` script, which generates latency data.
 
 ## Getting Started
 
