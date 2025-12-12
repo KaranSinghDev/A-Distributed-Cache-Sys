@@ -32,22 +32,18 @@ graph TD
     end
 
     subgraph "Distributed Cache Cluster"
-        N2("Node 2 (Gateway)")
-
-        subgraph "Node 3 (Coordinator)"
-            N3_Process["Process"]
-            N3_Storage[(Storage)]
-        end
-        
         N1("Node 1 (Replica)")
+        N2("Node 2 (Gateway)")
+        N3("Node 3 (Coordinator)")
+        N3_Storage[(Storage for Node 3)]
     end
-
+    
     C -- "1. SET('my_key', 'value')" --> N2;
-    N2 -- "2. Hash key & forward to Coordinator" --> N3_Process;
-    N3_Process -- "3. Write data to local storage" --> N3_Storage;
-    N3_Process -- "4. Replicate to N-1 successors" --> N1;
-    N3_Process -- "4. Replicate to N-1 successors" --> N2;
-    N3_Process -- "5. Acknowledge success to Client" --> C;
+    N2 -- "2. Hash key & forward to Coordinator" --> N3;
+    N3 -- "3. Write data locally" --> N3_Storage;
+    N3 -- "4. Replicate to N-1 successors" --> N1;
+    N3 -- "4. Replicate to N-1 successors" --> N2;
+    N3 -- "5. Acknowledge success" --> C;
 ```
 
 ## Benchmark & Resilience Analysis
