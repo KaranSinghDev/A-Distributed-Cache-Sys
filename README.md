@@ -27,20 +27,23 @@ The system's resilience is based on two core distributed algorithms: **Consisten
 
 ```mermaid
 graph TD
-    Client([Client])
-
-    subgraph "Cluster Nodes"
-        Node1(Node 1)
-        Node2(Node 2)
-        Node3(Node 3)
+    subgraph "Client"
+        C([Client])
     end
 
-    Client -- "1. SET('my_key', 'value') to any node" --> Node2;
-    Node2 -- "2. Forwards request to Coordinator (Node 3)" --> Node3;
-    Node3 -- "3. Writes data locally" --> Node3;
-    Node3 -- "4. Replicates to N-1 successors" --> Node1;
-    Node3 -- "4. Replicates to N-1 successors" --> Node2;
-    Node3 -- "5. Sends success acknowledgement" --> Client;
+    subgraph "Distributed Cache Cluster"
+        direction LR
+        N2("Node 2 (Gateway)")
+        N3("Node 3 (Coordinator)")
+        N1("Node 1 (Replica)")
+    end
+
+    C -- "1. SET('my_key', 'value')" --> N2;
+    N2 -- "2. Hash key and forward to Coordinator" --> N3;
+    N3 -- "3. Write data to local storage" --> N3;
+    N3 -- "4. Replicate to N-1 successors" --> N1;
+    N3 -- "4. Replicate to N-1 successors" --> N2;
+    N3 -- "5. Acknowledge success" --> C;
 ```
 
 ## Benchmark & Resilience Analysis
